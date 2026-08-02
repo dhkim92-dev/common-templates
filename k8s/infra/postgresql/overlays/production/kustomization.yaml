@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  # 운영 클러스터에 맞는 RWO StorageClass로 변경합니다.
+  - target:
+      kind: StatefulSet
+      name: postgresql
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/storageClassName
+        value: REPLACE_PRODUCTION_STORAGE_CLASS
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+        value: 50Gi

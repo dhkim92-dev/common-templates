@@ -21,6 +21,7 @@ metadata:
   name: grafana-web
   namespace: infra
 spec:
+  type: NodePort
   selector:
     app.kubernetes.io/name: grafana
   ports:
@@ -82,10 +83,23 @@ spec:
               containerPort: 3000
           envFrom:
             - secretRef:
-                name: grafana-database
-            - secretRef:
                 name: grafana-admin
           env:
+            - name: GF_DATABASE_TYPE
+              value: postgres
+            - name: GF_DATABASE_HOST
+              value: postgresql.infra.svc:5432
+            - name: GF_DATABASE_NAME
+              value: grafana
+            - name: GF_DATABASE_USER
+              value: grafana
+            - name: GF_DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-credentials
+                  key: POSTGRES_PASSWORD
+            - name: GF_DATABASE_SSL_MODE
+              value: disable
             - name: GF_SERVER_ROOT_URL
               value: http://grafana-web.infra.svc:3000/
             - name: GF_UNIFIED_ALERTING_ENABLED

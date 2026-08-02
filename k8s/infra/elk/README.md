@@ -6,13 +6,13 @@
 
 | 구성 요소 | 역할 | 기본 구성 |
 | --- | --- | --- |
-| Elasticsearch | 로그 저장·검색 API | StatefulSet 1 replica, 50Gi PVC |
+| Elasticsearch | 로그 저장·검색 API | local/test: StatefulSet 1 replica, production: StatefulSet 3 replicas |
 | Logstash | Filebeat 이벤트 수신·전송 | Deployment, `logstash.infra.svc:5044` |
 | Kibana | 로그 조회 UI | Deployment, `kibana.infra.svc:5601` |
 
 Elasticsearch 보안은 활성화되어 있습니다. 처음 기동할 때 `elk-credentials` Secret의 `elastic-password` 값이 내장 관리자 계정 `elastic`의 초기 비밀번호가 됩니다. `kibana_system`과 최소 권한 `logstash_internal` 계정은 `elk-credentials-init` Job이 생성합니다. 따라서 관리자 비밀번호와 초기 계정 비밀번호를 생성 전에 지정할 수 있습니다.
 
-이 기본 구성은 클러스터 내부 HTTP 통신을 사용하며, Elasticsearch는 단일 노드입니다. 외부 노출은 Ingress나 Gateway에서 TLS와 인증 정책을 별도로 적용하십시오. Elasticsearch 다중 노드 HA에는 transport TLS 및 노드 인증서가 필요하므로, 인증서 발급 체계를 정한 뒤 별도 오버레이로 확장해야 합니다.
+local/test 오버레이는 `discovery.type=single-node`인 단일 Elasticsearch 노드입니다. production 오버레이는 3개 Elasticsearch 노드로 구성되며, headless Service를 통한 노드 discovery와 transport TLS를 사용합니다. 세 노드가 모두 master-eligible이므로 한 노드가 중단되어도 quorum을 유지합니다. Pod anti-affinity가 세 노드를 서로 다른 Kubernetes 노드에 배치하고, PodDisruptionBudget은 자발적 중단 때 최소 두 노드를 유지합니다. 따라서 production 클러스터에는 최소 3개의 스케줄 가능한 노드가 필요합니다. 외부 노출은 Ingress나 Gateway에서 HTTP TLS와 인증 정책을 별도로 적용하십시오.
 
 ## Secret 준비
 
@@ -37,17 +37,47 @@ kubectl apply -k k8s/infra/elk/overlays/local
 # 로컬
 kubectl apply -k k8s/infra/elk/overlays/local
 
-# 운영: PVC StorageClass 값을 먼저 지정
+# production: 아래의 인증서 Secret과 PVC StorageClass 값을 먼저 지정
 kubectl apply -k k8s/infra/elk/overlays/production
 
 kubectl get pods,pvc,svc -n infra
 kubectl logs -n infra job/elk-credentials-init
-kubectl port-forward -n infra service/kibana 5601:5601
+kubectl get service -n infra kibana
 ```
 
-브라우저에서 `http://localhost:5601`을 열고 `elastic` 계정과 `elastic-password` 값으로 로그인합니다. Kibana **Discover**에서 `logs-*` 데이터 뷰를 만들면 수집 로그를 조회할 수 있습니다.
+`kibana`는 `NodePort` 서비스입니다. 위 명령의 `PORT(S)`에 표시되는 NodePort와 노드 IP를 사용해 `http://<node-ip>:<node-port>`로 접속합니다. `elastic` 계정과 `elastic-password` 값으로 로그인한 뒤 Kibana **Discover**에서 `logs-*` 데이터 뷰를 만들면 수집 로그를 조회할 수 있습니다.
 
-운영 오버레이는 Elasticsearch PVC의 StorageClass를 `REPLACE_MULTI_NODE_STORAGE_CLASS`로 표시합니다. 클라우드의 다중 노드에서 사용할 StorageClass 이름으로 반드시 바꾼 뒤 적용하십시오. 기본 `openebs-local`은 노드 고정 RWO 볼륨입니다.
+### production Elasticsearch 인증서와 스토리지
+
+production은 `elasticsearch-transport-tls` Secret 없이는 기동하지 않습니다. Secret에는 `ca.crt`, `tls.crt`, `tls.key` 키가 필요합니다. 세 Pod가 사용하는 인증서에는 최소한 다음 DNS SAN을 포함하십시오.
+
+- `elasticsearch-0.elasticsearch-headless.infra.svc`
+- `elasticsearch-1.elasticsearch-headless.infra.svc`
+- `elasticsearch-2.elasticsearch-headless.infra.svc`
+
+사내 CA 또는 인증서 관리 체계로 해당 파일을 발급한 뒤 다음처럼 생성합니다. 실제 개인키와 인증서는 Git에 커밋하지 않습니다. 키 형식은 암호화되지 않은 PEM이어야 합니다.
+
+```sh
+kubectl create secret generic elasticsearch-transport-tls \
+  --namespace infra \
+  --from-file=ca.crt=/secure/path/ca.crt \
+  --from-file=tls.crt=/secure/path/tls.crt \
+  --from-file=tls.key=/secure/path/tls.key
+```
+
+`overlays/production/transport-tls.secret.example.yaml`은 Secret의 키 구조만 보여 주는 예시입니다. placeholder 값을 적용하지 마십시오.
+
+운영 오버레이의 `REPLACE_MULTI_NODE_STORAGE_CLASS`를 클라우드에서 다중 노드에 사용할 StorageClass 이름으로 바꾼 뒤 적용하십시오. 각 노드는 독립적인 200Gi RWO PVC를 사용합니다. 기본 `openebs-local`은 노드 고정 볼륨이므로 다중 노드 production 용도로 사용하지 않습니다.
+
+처음 production 클러스터를 생성한 후 green 상태를 확인합니다.
+
+```sh
+kubectl get pods -n infra -l app.kubernetes.io/name=elasticsearch
+kubectl exec -n infra elasticsearch-0 -- \
+  curl --fail -u elastic:<elastic-password> http://localhost:9200/_cluster/health?pretty
+```
+
+`cluster.initial_master_nodes`는 새 클러스터의 최초 부트스트랩에만 필요한 값입니다. 정상적으로 클러스터가 구성된 뒤에는 `overlays/production/elasticsearch-production.yaml`에서 해당 환경 변수를 제거하고 다시 적용하십시오. 기존 데이터 PVC를 삭제하지 않은 상태에서 노드를 재시작하거나 수를 조정할 때는 이 값을 다시 추가하지 않습니다.
 
 ## Filebeat로 애플리케이션 로그 수집
 

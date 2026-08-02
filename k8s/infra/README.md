@@ -6,4 +6,5 @@
 | --- | --- | --- |
 | Prometheus | 메트릭 수집, 노드·워크로드 상태, Alertmanager 알림 | [prometheus/README.md](prometheus/README.md) |
 | Grafana | 대시보드, Prometheus 조회, Grafana Alerting HA | [grafana/README.md](grafana/README.md) |
+| PostgreSQL | Grafana 상태·대시보드·알림 설정용 단일 데이터베이스 | [postgresql/README.md](postgresql/README.md) |
 | ELK | Elasticsearch 로그 저장·조회, Logstash 수집, Kibana 탐색 | [elk/README.md](elk/README.md) |

@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  namespace: infra
+spec:
+  replicas: 3
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: elasticsearch
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: elasticsearch
+          env:
+            - name: discovery.type
+              $patch: delete
+            # Headless Service가 elasticsearch-0..2의 주소를 발견하게 합니다.
+            - name: discovery.seed_hosts
+              value: elasticsearch-headless
+            # 새 production 클러스터의 최초 부트스트랩에만 사용합니다.
+            - name: cluster.initial_master_nodes
+              value: elasticsearch-0,elasticsearch-1,elasticsearch-2
+            - name: xpack.security.transport.ssl.enabled
+              value: "true"
+            - name: xpack.security.transport.ssl.verification_mode
+              value: certificate
+            - name: xpack.security.transport.ssl.client_authentication
+              value: required
+            - name: xpack.security.transport.ssl.certificate_authorities
+              value: /usr/share/elasticsearch/config/transport-tls/ca.crt
+            - name: xpack.security.transport.ssl.certificate
+              value: /usr/share/elasticsearch/config/transport-tls/tls.crt
+            - name: xpack.security.transport.ssl.key
+              value: /usr/share/elasticsearch/config/transport-tls/tls.key
+          volumeMounts:
+            - name: transport-tls
+              mountPath: /usr/share/elasticsearch/config/transport-tls
+              readOnly: true
+      volumes:
+        - name: transport-tls
+          secret:
+            secretName: elasticsearch-transport-tls

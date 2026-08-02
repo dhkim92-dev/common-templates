@@ -2,7 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
+  - elasticsearch-pdb.yaml
 patches:
+  - path: elasticsearch-production.yaml
+    target:
+      kind: StatefulSet
+      name: elasticsearch
   # openebs-local은 노드 고정 RWO 볼륨이므로 운영 클러스터의 StorageClass로 바꿉니다.
   - target:
       kind: StatefulSet
