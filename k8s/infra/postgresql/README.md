@@ -16,7 +16,7 @@ kubectl apply -f k8s/infra/postgresql/secrets.yaml
 ## 배포
 
 ```sh
-# 로컬: openebs-local, 10Gi
+# 로컬: openebs-hostpath, 10Gi
 kubectl apply -k k8s/infra/postgresql/overlays/local
 
 # production: overlay의 REPLACE_PRODUCTION_STORAGE_CLASS을 클러스터 StorageClass로 변경 후 적용

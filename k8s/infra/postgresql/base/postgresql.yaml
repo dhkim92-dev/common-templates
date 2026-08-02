@@ -84,7 +84,7 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
-        storageClassName: openebs-local
+        storageClassName: openebs-hostpath
         resources:
           requests:
             storage: 10Gi

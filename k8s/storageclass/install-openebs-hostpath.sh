@@ -2,15 +2,15 @@
 # Installs the OpenEBS Local PV HostPath provisioner without Helm.
 #
 # Configuration examples:
-#   ./install-openebs-local.sh
-#   LOCALPV_BASE_PATH=/mnt/openebs/local ./install-openebs-local.sh
-#   STORAGE_CLASS_NAME=openebs-local-prod IS_DEFAULT_STORAGE_CLASS=false ./install-openebs-local.sh
+#   ./install-openebs-hostpath.sh
+#   LOCALPV_BASE_PATH=/mnt/openebs/local ./install-openebs-hostpath.sh
+#   STORAGE_CLASS_NAME=openebs-hostpath-prod IS_DEFAULT_STORAGE_CLASS=false ./install-openebs-hostpath.sh
 
 set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 OPENEBS_MANIFEST_URL=${OPENEBS_MANIFEST_URL:-https://openebs.github.io/charts/openebs-operator-lite.yaml}
-STORAGE_CLASS_NAME=${STORAGE_CLASS_NAME:-openebs-local}
+STORAGE_CLASS_NAME=${STORAGE_CLASS_NAME:-openebs-hostpath}
 LOCALPV_BASE_PATH=${LOCALPV_BASE_PATH:-/var/openebs/local}
 IS_DEFAULT_STORAGE_CLASS=${IS_DEFAULT_STORAGE_CLASS:-false}
 WAIT_TIMEOUT=${WAIT_TIMEOUT:-180s}
@@ -69,14 +69,14 @@ case "$WAIT_TIMEOUT" in
     ;;
 esac
 
-TEMP_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/openebs-local-storageclass.XXXXXX")
+TEMP_MANIFEST=$(mktemp "${TMPDIR:-/tmp}/openebs-hostpath-storageclass.XXXXXX")
 trap 'rm -f "$TEMP_MANIFEST"' EXIT HUP INT TERM
 
 sed \
   -e "s|__STORAGE_CLASS_NAME__|$STORAGE_CLASS_NAME|g" \
   -e "s|__LOCALPV_BASE_PATH__|$LOCALPV_BASE_PATH|g" \
   -e "s|__IS_DEFAULT_STORAGE_CLASS__|$IS_DEFAULT_STORAGE_CLASS|g" \
-  "$SCRIPT_DIR/openebs-local.yaml" > "$TEMP_MANIFEST"
+  "$SCRIPT_DIR/openebs-hostpath.yaml" > "$TEMP_MANIFEST"
 
 printf 'Installing OpenEBS Local PV HostPath on %s...\n' "$OS_NAME"
 kubectl apply -f "$OPENEBS_MANIFEST_URL"

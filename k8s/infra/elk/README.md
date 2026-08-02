@@ -67,7 +67,7 @@ kubectl create secret generic elasticsearch-transport-tls \
 
 `overlays/production/transport-tls.secret.example.yaml`은 Secret의 키 구조만 보여 주는 예시입니다. placeholder 값을 적용하지 마십시오.
 
-운영 오버레이의 `REPLACE_MULTI_NODE_STORAGE_CLASS`를 클라우드에서 다중 노드에 사용할 StorageClass 이름으로 바꾼 뒤 적용하십시오. 각 노드는 독립적인 200Gi RWO PVC를 사용합니다. 기본 `openebs-local`은 노드 고정 볼륨이므로 다중 노드 production 용도로 사용하지 않습니다.
+운영 오버레이의 `REPLACE_MULTI_NODE_STORAGE_CLASS`를 클라우드에서 다중 노드에 사용할 StorageClass 이름으로 바꾼 뒤 적용하십시오. 각 노드는 독립적인 200Gi RWO PVC를 사용합니다. 기본 `openebs-hostpath`는 노드 고정 볼륨이므로 다중 노드 production 용도로 사용하지 않습니다.
 
 처음 production 클러스터를 생성한 후 green 상태를 확인합니다.
 

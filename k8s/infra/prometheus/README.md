@@ -11,7 +11,7 @@ Prometheus, Alertmanager, node-exporter, kube-state-metrics를 `infra` 네임스
 | node-exporter | 노드 CPU·메모리·디스크 메트릭 | DaemonSet |
 | kube-state-metrics | Kubernetes 오브젝트 상태 | Deployment |
 
-`base`는 `openebs-local`을 기본 StorageClass로 사용합니다. 이 로컬 PV는 노드에 고정되므로 운영에서는 `overlays/production/kustomization.yaml`의 `REPLACE_MULTI_NODE_STORAGE_CLASS`를 다중 노드에서 사용할 수 있는 StorageClass 이름으로 바꾸십시오.
+`base`는 `openebs-hostpath`를 기본 StorageClass로 사용합니다. 이 로컬 PV는 노드에 고정되므로 운영에서는 `overlays/production/kustomization.yaml`의 `REPLACE_MULTI_NODE_STORAGE_CLASS`를 다중 노드에서 사용할 수 있는 StorageClass 이름으로 바꾸십시오.
 
 ## Secret 준비
 

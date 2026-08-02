@@ -8,7 +8,7 @@ patches:
     target:
       kind: StatefulSet
       name: elasticsearch
-  # openebs-local은 노드 고정 RWO 볼륨이므로 운영 클러스터의 StorageClass로 바꿉니다.
+  # openebs-hostpath는 노드 고정 RWO 볼륨이므로 운영 클러스터의 StorageClass로 바꿉니다.
   - target:
       kind: StatefulSet
       name: elasticsearch
