@@ -1,0 +1,12 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: __STORAGE_CLASS_NAME__
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "__IS_DEFAULT_STORAGE_CLASS__"
+provisioner: openebs.io/local
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  BasePath: __LOCALPV_BASE_PATH__

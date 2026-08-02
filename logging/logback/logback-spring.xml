@@ -1,0 +1,21 @@
+<configuration>
+    <!--
+      Spring Boot resolves these from application.yaml automatically.
+      Do not duplicate the desired log level in this file.
+    -->
+    <springProperty scope="context" name="ROOT_LOG_LEVEL" source="logging.level.root" defaultValue="INFO" />
+    <springProperty scope="context" name="SPRING_LOG_LEVEL" source="logging.level.org.springframework" defaultValue="INFO" />
+    <springProperty scope="context" name="HIBERNATE_LOG_LEVEL" source="logging.level.org.hibernate" defaultValue="WARN" />
+
+    <include resource="console-appender.xml" />
+    <include resource="file-appender.xml" />
+
+    <root level="${ROOT_LOG_LEVEL}">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </root>
+
+    <!-- Reduce framework noise without hiding application logs. -->
+    <logger name="org.springframework" level="${SPRING_LOG_LEVEL}" />
+    <logger name="org.hibernate" level="${HIBERNATE_LOG_LEVEL}" />
+</configuration>

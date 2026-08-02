@@ -1,0 +1,11 @@
+<included>
+    <!--
+      Console output is intended for local development and Kubernetes stdout collection.
+      %highlight emits ANSI colours: ERROR (red), WARN (yellow), INFO (blue), and DEBUG/TRACE.
+    -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %highlight(%-5level) %cyan([%thread]) [traceId=%X{traceId:-}, spanId=%X{spanId:-}] %magenta(%logger{36}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+</included>

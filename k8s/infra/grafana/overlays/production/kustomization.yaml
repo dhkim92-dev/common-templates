@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  # Production HA topology. Both replicas share the PostgreSQL configuration
+  # supplied by grafana-database and coordinate alert evaluation through peers.
+  - target:
+      kind: StatefulSet
+      name: grafana
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - target:
+      kind: PodDisruptionBudget
+      name: grafana
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 1

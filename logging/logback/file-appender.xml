@@ -1,0 +1,23 @@
+<included>
+    <!-- LOG_PATH may be supplied with -DLOG_PATH=/var/log/application. -->
+    <property name="LOG_PATH" value="${LOG_PATH:-./logs}" />
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/application.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- Default: one archive per day; %i also rolls when maxFileSize is reached. -->
+            <fileNamePattern>${LOG_PATH}/archive/application.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+
+            <!-- Hourly template: ${LOG_PATH}/archive/application.%d{yyyy-MM-dd_HH}.%i.log.gz -->
+            <!-- Daily template:  ${LOG_PATH}/archive/application.%d{yyyy-MM-dd}.%i.log.gz -->
+            <!-- Monthly template:${LOG_PATH}/archive/application.%d{yyyy-MM}.%i.log.gz -->
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <charset>UTF-8</charset>
+            <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [traceId=%X{traceId:-}, spanId=%X{spanId:-}] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+</included>

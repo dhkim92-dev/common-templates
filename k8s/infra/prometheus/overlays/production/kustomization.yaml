@@ -1,0 +1,48 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  # Production HA topology: independent TSDB PVCs and a 3-member alert cluster.
+  - target:
+      kind: StatefulSet
+      name: prometheus
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - target:
+      kind: StatefulSet
+      name: alertmanager
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+  - target:
+      kind: PodDisruptionBudget
+      name: prometheus
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 1
+  - target:
+      kind: PodDisruptionBudget
+      name: alertmanager
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 2
+  - target:
+      kind: StatefulSet
+      name: prometheus
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/storageClassName
+        value: REPLACE_MULTI_NODE_STORAGE_CLASS
+  - target:
+      kind: StatefulSet
+      name: alertmanager
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/storageClassName
+        value: REPLACE_MULTI_NODE_STORAGE_CLASS
