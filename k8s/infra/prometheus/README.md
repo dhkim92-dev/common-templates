@@ -48,8 +48,10 @@ kubectl apply -k k8s/infra/prometheus/overlays/production
 
 ```sh
 kubectl get pods,pvc,endpoints -n infra
-kubectl port-forward -n infra service/prometheus 9090:9090
+kubectl get service -n infra prometheus-ui
 ```
+
+`prometheus-ui`는 외부 확인용 NodePort Service입니다. 위 명령의 `PORT(S)` 열에서 `9090:<NodePort>/TCP`의 `<NodePort>`를 확인한 뒤 `http://<Node-IP>:<NodePort>`로 접속합니다. 기존 `prometheus` Service는 StatefulSet의 내부 DNS용 headless Service이므로 외부 접속에는 사용하지 않습니다.
 
 Prometheus의 **Status > Targets**에서 `kubernetes-nodes`, `node-exporter`, `kube-state-metrics`가 `UP`인지 확인합니다.
 
