@@ -1,0 +1,76 @@
+global:
+  scrape_interval: 30s
+  scrape_timeout: 10s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - localhost:9090
+
+  - job_name: kubernetes-annotated-services
+    metrics_path: /metrics
+    scheme: http
+    kubernetes_sd_configs:
+      # namespaces를 생략하면 모든 네임스페이스를 검색한다.
+      - role: endpoints
+
+    relabel_configs:
+      # 명시적으로 수집을 허용한 Service만 유지한다.
+      - source_labels:
+          - __meta_kubernetes_service_annotation_prometheus_io_scrape
+        action: keep
+        regex: "true"
+
+      # 실제 Endpoints 포트만 유지하여 Pod의 다른 컨테이너 포트를 수집하지 않는다.
+      - source_labels:
+          - __meta_kubernetes_endpoint_port_name
+        action: keep
+        regex: .+
+
+      # annotation이 비어 있으면 위의 /metrics와 http 기본값을 그대로 사용한다.
+      - source_labels:
+          - __meta_kubernetes_service_annotation_prometheus_io_path
+        action: replace
+        regex: (/.*)
+        target_label: __metrics_path__
+        replacement: $1
+      - source_labels:
+          - __meta_kubernetes_service_annotation_prometheus_io_scheme
+        action: replace
+        regex: (https?)
+        target_label: __scheme__
+        replacement: $1
+
+      - source_labels:
+          - __meta_kubernetes_namespace
+        target_label: namespace
+      - source_labels:
+          - __meta_kubernetes_service_name
+        target_label: service
+      - source_labels:
+          - __meta_kubernetes_pod_name
+        target_label: pod
+      - source_labels:
+          - __meta_kubernetes_pod_node_name
+        regex: (.+)
+        target_label: node
+        replacement: $1
+      - source_labels:
+          - __meta_kubernetes_endpoint_node_name
+        regex: (.+)
+        target_label: node
+        replacement: $1
+      - source_labels:
+          - __meta_kubernetes_endpoint_port_name
+        target_label: endpoint_port
+
+      # Pod 레이블을 먼저 가져오고, Service에 같은 레이블이 있으면 Service 값을 우선한다.
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(app_kubernetes_io_.+)
+        replacement: $1
+      - action: labelmap
+        regex: __meta_kubernetes_service_label_(app_kubernetes_io_.+)
+        replacement: $1
+
