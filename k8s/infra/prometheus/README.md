@@ -13,6 +13,17 @@ Prometheus, Alertmanager, node-exporter, kube-state-metrics를 `infra` 네임스
 
 `base`는 `openebs-hostpath`를 기본 StorageClass로 사용합니다. 이 로컬 PV는 노드에 고정되므로 운영에서는 `overlays/production/kustomization.yaml`의 `REPLACE_MULTI_NODE_STORAGE_CLASS`를 다중 노드에서 사용할 수 있는 StorageClass 이름으로 바꾸십시오.
 
+## Prometheus 수집 설정
+
+[prometheus.yaml](prometheus.yaml)은 `prometheus.yml.example`을 바탕으로 만든 실제 수집 설정입니다. 패키지 루트 Kustomization이 이 파일을 `prometheus-config` ConfigMap의 `prometheus.yml` 키로 생성하고, Prometheus 컨테이너의 `/etc/prometheus/prometheus.yml`에 읽기 전용으로 마운트합니다. 따라서 annotation 기반 자동 수집 대상을 추가할 때에는 이 파일을 수정하면 됩니다.
+
+Kustomize로 설정을 반영한 뒤에는 Prometheus가 새 파일을 읽도록 Pod를 재시작합니다.
+
+```sh
+kubectl apply -k k8s/infra/prometheus/overlays/local
+kubectl rollout restart statefulset/prometheus -n infra
+```
+
 ## Secret 준비
 
 Alertmanager Slack Webhook을 Secret으로 제공합니다. 예시 파일을 복사해 실제 값으로 바꾼 뒤 적용합니다.
@@ -185,4 +196,3 @@ Service, Endpoint 또는 Pod의 변경은 Kubernetes discovery가 자동 반영�
 - 위 방법을 제공하지 않는 배포에서는 Prometheus Pod를 롤링 재시작한다.
 
 Grafana는 수집 대상을 직접 scrape하지 않는다. Grafana의 데이터 소스로 Prometheus를 등록하고, Prometheus가 저장한 메트릭을 PromQL로 조회한다.
-
