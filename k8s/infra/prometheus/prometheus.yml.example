@@ -3,6 +3,23 @@ global:
   scrape_timeout: 10s
   evaluation_interval: 30s
 
+alerting:
+  alertmanagers:
+    - kubernetes_sd_configs:
+        - role: endpoints
+          namespaces:
+            names: [infra]
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_service_name]
+          action: keep
+          regex: alertmanager
+        - source_labels: [__meta_kubernetes_endpoint_port_name]
+          action: keep
+          regex: web
+
+rule_files:
+  - /etc/prometheus/rules/*.yaml
+
 scrape_configs:
   - job_name: prometheus
     static_configs:
@@ -73,4 +90,3 @@ scrape_configs:
       - action: labelmap
         regex: __meta_kubernetes_service_label_(app_kubernetes_io_.+)
         replacement: $1
-

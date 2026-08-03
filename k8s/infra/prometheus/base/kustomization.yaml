@@ -3,6 +3,11 @@ kind: Kustomization
 resources:
   - rbac.yaml
   - prometheus-config.yaml
-  - prometheus.yaml
+  - prometheus-statefulset.yaml
   - alertmanager.yaml
   - exporters.yaml
+configMapGenerator:
+  - name: prometheus-config
+    namespace: infra
+    files:
+      - prometheus.yml=prometheus.yaml

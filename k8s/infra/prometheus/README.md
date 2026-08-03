@@ -15,13 +15,12 @@ Prometheus, Alertmanager, node-exporter, kube-state-metrics를 `infra` 네임스
 
 ## Prometheus 수집 설정
 
-[prometheus.yaml](prometheus.yaml)은 `prometheus.yml.example`을 바탕으로 만든 실제 수집 설정입니다. 패키지 루트 Kustomization이 이 파일을 `prometheus-config` ConfigMap의 `prometheus.yml` 키로 생성하고, Prometheus 컨테이너의 `/etc/prometheus/prometheus.yml`에 읽기 전용으로 마운트합니다. 따라서 annotation 기반 자동 수집 대상을 추가할 때에는 이 파일을 수정하면 됩니다.
+[base/prometheus.yaml](base/prometheus.yaml)은 [prometheus.yml.example](prometheus.yml.example)을 복사한 실제 수집 설정입니다. 예제에는 기존 Alertmanager 연동과 경보 규칙 로딩 설정도 포함합니다. `base` Kustomization이 이 파일을 `prometheus-config` ConfigMap의 `prometheus.yml` 키로 생성하고, Prometheus 컨테이너의 `/etc/prometheus/prometheus.yml`에 읽기 전용으로 마운트합니다. 따라서 annotation 기반 자동 수집 대상을 추가할 때에는 이 파일을 수정하면 됩니다.
 
-Kustomize로 설정을 반영한 뒤에는 Prometheus가 새 파일을 읽도록 Pod를 재시작합니다.
+Kustomize가 ConfigMap 이름에 설정 해시를 포함하므로, 설정을 반영하면 StatefulSet의 Pod 템플릿도 자동으로 갱신됩니다. 별도 재시작은 필요하지 않습니다.
 
 ```sh
 kubectl apply -k k8s/infra/prometheus/overlays/local
-kubectl rollout restart statefulset/prometheus -n infra
 ```
 
 ## Secret 준비
@@ -53,7 +52,7 @@ kubectl get service -n infra prometheus-ui
 
 `prometheus-ui`는 외부 확인용 NodePort Service입니다. 위 명령의 `PORT(S)` 열에서 `9090:<NodePort>/TCP`의 `<NodePort>`를 확인한 뒤 `http://<Node-IP>:<NodePort>`로 접속합니다. 기존 `prometheus` Service는 StatefulSet의 내부 DNS용 headless Service이므로 외부 접속에는 사용하지 않습니다.
 
-Prometheus의 **Status > Targets**에서 `kubernetes-nodes`, `node-exporter`, `kube-state-metrics`가 `UP`인지 확인합니다.
+Prometheus의 **Status > Targets**에서 `kubernetes-annotated-services` 작업 아래의 `node-exporter`, `kube-state-metrics` 및 추가한 Service가 `UP`인지 확인합니다.
 
 ## 메트릭과 경보
 

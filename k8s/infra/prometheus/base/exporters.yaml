@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: node-exporter
   namespace: infra
+  annotations:
+    prometheus.io/scrape: "true"
   labels:
     app.kubernetes.io/name: node-exporter
 spec:
@@ -62,6 +64,8 @@ kind: Service
 metadata:
   name: kube-state-metrics
   namespace: infra
+  annotations:
+    prometheus.io/scrape: "true"
   labels:
     app.kubernetes.io/name: kube-state-metrics
 spec:
