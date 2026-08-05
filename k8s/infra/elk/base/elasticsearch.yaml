@@ -104,6 +104,7 @@ spec:
         - name: bootstrap-password
           secret:
             secretName: elk-credentials
+            defaultMode: 0600
             items:
               - key: elastic-password
                 path: elastic-password
