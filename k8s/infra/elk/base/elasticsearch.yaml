@@ -53,6 +53,18 @@ spec:
           command: ["sh", "-ec", "sysctl -w vm.max_map_count=262144"]
           securityContext:
             privileged: true
+        - name: prepare-bootstrap-password
+          image: busybox:1.37.0
+          command:
+            - sh
+            - -ec
+            - install -o 1000 -g 1000 -m 0600 /source/elastic-password /target/elastic-password
+          volumeMounts:
+            - name: bootstrap-password-source
+              mountPath: /source
+              readOnly: true
+            - name: bootstrap-password
+              mountPath: /target
       containers:
         - name: elasticsearch
           image: docker.elastic.co/elasticsearch/elasticsearch:8.19.17
@@ -102,9 +114,10 @@ spec:
               readOnly: true
       volumes:
         - name: bootstrap-password
+          emptyDir: {}
+        - name: bootstrap-password-source
           secret:
             secretName: elk-credentials
-            defaultMode: 0600
             items:
               - key: elastic-password
                 path: elastic-password
