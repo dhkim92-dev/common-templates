@@ -9,32 +9,6 @@ data:
     config.reload.interval: 5s
 ---
 apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: logstash-pipeline
-  namespace: infra
-data:
-  beats.conf: |
-    input {
-      beats {
-        port => 5044
-      }
-    }
-    filter {
-      if [log][file][path] {
-        mutate { add_field => { "[labels][source_file]" => "%{[log][file][path]}" } }
-      }
-    }
-    output {
-      elasticsearch {
-        hosts => ["http://elasticsearch.infra.svc:9200"]
-        index => "logs-%{+YYYY.MM.dd}"
-        user => "logstash_internal"
-        password => "${LOGSTASH_PASSWORD}"
-      }
-    }
----
-apiVersion: v1
 kind: Service
 metadata:
   name: logstash

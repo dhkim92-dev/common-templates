@@ -33,6 +33,15 @@ kubectl apply -k k8s/infra/elk/overlays/local
 
 ## 배포와 확인
 
+Logstash 파이프라인을 변경하려면 예시를 실제 ConfigMap 파일로 복사한 뒤 `beats.conf`를 수정합니다.
+
+```sh
+cp k8s/infra/elk/logstash_pipeline_configmap.example.yaml \
+  k8s/infra/elk/logstash_pipeline_configmap.yaml
+# logstash_pipeline_configmap.yaml의 data.beats.conf 수정
+kubectl apply -f k8s/infra/elk/logstash_pipeline_configmap.yaml
+```
+
 ```sh
 # 로컬
 kubectl apply -k k8s/infra/elk/overlays/local
@@ -53,10 +62,12 @@ Logstash 설정은 용도별로 두 ConfigMap으로 분리합니다.
 
 | ConfigMap | 파일 | 변경 반영 방식 |
 | --- | --- | --- |
-| `logstash-pipeline` | `beats.conf` | 자동 재로딩 |
+| `logstash-pipeline` | `logstash_pipeline_configmap.yaml`의 `beats.conf` | 자동 재로딩 |
 | `logstash-settings` | `logstash.yml` | Pod 재시작 필요 |
 
 `logstash-settings`의 `config.reload.automatic: true`와 `config.reload.interval: 5s`로 인해, `logstash-pipeline` ConfigMap의 변경은 볼륨 갱신 뒤 Logstash가 자동으로 다시 읽습니다. Kubernetes의 ConfigMap 볼륨 갱신에는 보통 수십 초 정도의 지연이 있을 수 있습니다.
+
+`logstash_pipeline_configmap.yaml`은 환경별 파이프라인을 사용자가 관리하는 파일이므로 Kustomize 오버레이에는 포함하지 않습니다. 파일을 수정할 때마다 `kubectl apply -f k8s/infra/elk/logstash_pipeline_configmap.yaml`로 ConfigMap을 갱신하십시오.
 
 파이프라인 문법 오류가 있는 새 설정은 적용되지 않으며, 기존에 정상 동작하던 파이프라인이 계속 사용됩니다. `logstash.yml`, JVM 옵션, 플러그인처럼 런타임 설정을 바꾼 경우에는 다음처럼 명시적으로 재시작하십시오.
 
