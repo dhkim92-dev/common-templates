@@ -47,6 +47,24 @@ kubectl get service -n infra kibana
 
 `kibana`는 `NodePort` 서비스입니다. 위 명령의 `PORT(S)`에 표시되는 NodePort와 노드 IP를 사용해 `http://<node-ip>:<node-port>`로 접속합니다. `elastic` 계정과 `elastic-password` 값으로 로그인한 뒤 Kibana **Discover**에서 `logs-*` 데이터 뷰를 만들면 수집 로그를 조회할 수 있습니다.
 
+### Logstash 설정 변경
+
+Logstash 설정은 용도별로 두 ConfigMap으로 분리합니다.
+
+| ConfigMap | 파일 | 변경 반영 방식 |
+| --- | --- | --- |
+| `logstash-pipeline` | `beats.conf` | 자동 재로딩 |
+| `logstash-settings` | `logstash.yml` | Pod 재시작 필요 |
+
+`logstash-settings`의 `config.reload.automatic: true`와 `config.reload.interval: 5s`로 인해, `logstash-pipeline` ConfigMap의 변경은 볼륨 갱신 뒤 Logstash가 자동으로 다시 읽습니다. Kubernetes의 ConfigMap 볼륨 갱신에는 보통 수십 초 정도의 지연이 있을 수 있습니다.
+
+파이프라인 문법 오류가 있는 새 설정은 적용되지 않으며, 기존에 정상 동작하던 파이프라인이 계속 사용됩니다. `logstash.yml`, JVM 옵션, 플러그인처럼 런타임 설정을 바꾼 경우에는 다음처럼 명시적으로 재시작하십시오.
+
+```sh
+kubectl rollout restart deployment/logstash -n infra
+kubectl rollout status deployment/logstash -n infra
+```
+
 ### production Elasticsearch 인증서와 스토리지
 
 production은 `elasticsearch-transport-tls` Secret 없이는 기동하지 않습니다. Secret에는 `ca.crt`, `tls.crt`, `tls.key` 키가 필요합니다. 세 Pod가 사용하는 인증서에는 최소한 다음 DNS SAN을 포함하십시오.
